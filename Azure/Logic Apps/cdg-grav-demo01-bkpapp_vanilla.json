@@ -1,0 +1,161 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Call_WebJob_API": {
+                "inputs": {
+                    "authentication": {
+                        "password": "@body('Parse_JSON_PW')?['value']",
+                        "type": "Basic",
+                        "username": "@body('Parse_JSON_User')?['value']"
+                    },
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    "method": "POST",
+                    "uri": "https://$WebAppName.scm.azurewebsites.net/api/triggeredwebjobs/$WebJobName/run"
+                },
+                "runAfter": {
+                    "Parse_JSON_PW": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Lookup_PW": {
+                "inputs": {
+                    "authentication": {
+                        "audience": "https://vault.azure.net",
+                        "type": "ManagedServiceIdentity"
+                    },
+                    "method": "GET",
+                    "queries": {
+                        "api-version": "7.0"
+                    },
+                    "uri": "https://$KeyVaultName.vault.azure.net/secrets/$PWSecretName/$PWSecretVersion"
+                },
+                "runAfter": {
+                    "Parse_JSON_User": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "Http"
+            },
+            "Lookup_User": {
+                "inputs": {
+                    "authentication": {
+                        "audience": "https://vault.azure.net",
+                        "type": "ManagedServiceIdentity"
+                    },
+                    "method": "GET",
+                    "queries": {
+                        "api-version": "7.0"
+                    },
+                    "uri": "https://$KeyVaultName.vault.azure.net/secrets/$UserSecretName/$UserSecretVersion"
+                },
+                "runAfter": {},
+                "type": "Http"
+            },
+            "Parse_JSON_PW": {
+                "inputs": {
+                    "content": "@body('Lookup_PW')",
+                    "schema": {
+                        "properties": {
+                            "attributes": {
+                                "properties": {
+                                    "created": {
+                                        "type": "integer"
+                                    },
+                                    "enabled": {
+                                        "type": "boolean"
+                                    },
+                                    "recoveryLevel": {
+                                        "type": "string"
+                                    },
+                                    "updated": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Lookup_PW": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            },
+            "Parse_JSON_User": {
+                "inputs": {
+                    "content": "@body('Lookup_User')",
+                    "schema": {
+                        "properties": {
+                            "attributes": {
+                                "properties": {
+                                    "created": {
+                                        "type": "integer"
+                                    },
+                                    "enabled": {
+                                        "type": "boolean"
+                                    },
+                                    "recoveryLevel": {
+                                        "type": "string"
+                                    },
+                                    "updated": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "id": {
+                                "type": "string"
+                            },
+                            "value": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "runAfter": {
+                    "Lookup_User": [
+                        "Succeeded"
+                    ]
+                },
+                "type": "ParseJson"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {},
+        "parameters": {},
+        "triggers": {
+            "Recurrence": {
+                "recurrence": {
+                    "frequency": "Day",
+                    "interval": 1,
+                    "schedule": {
+                        "hours": [
+                            "4"
+                        ],
+                        "minutes": [
+                            30
+                        ]
+                    },
+                    "startTime": "2019-05-05T04:30:00Z",
+                    "timeZone": "UTC"
+                },
+                "type": "Recurrence"
+            }
+        }
+    }
+}
